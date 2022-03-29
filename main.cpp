@@ -12,6 +12,7 @@
 #include <cstring>
 #include <map>
 using namespace std;
+using namespace std::chrono;
 
 struct Node {
     int freq;
@@ -60,8 +61,11 @@ void sortNodes(vector<Node*> &nodes){
 
 struct HuffTree* initTree(vector<Node*> &nodes){
     struct HuffTree* huffTree = (struct HuffTree*)malloc(sizeof(struct HuffTree));
+    cout<<"allocated"<<endl;
     //huffTree->encoded= "";
     huffTree->nodes = nodes;
+    cout<<"allocated"<<endl;
+
     return huffTree;
 }
 
@@ -138,7 +142,9 @@ HuffTree* huffManCompression(string n){
   cout<<"assigned into list"<<endl;
   sortNodes(nodes);
   cout<<"sorted"<<endl;
+  cout<<nodes.size()<<endl;
   for(int i = 0; i < nodes.size(); i++){
+    cout<<"       "<<i<<endl;
     cout<<nodes[i]->c<<endl;
     cout<<nodes[i]->freq<<endl;
   }
@@ -150,6 +156,7 @@ HuffTree* huffManCompression(string n){
     cout<<t->nodes[i]->freq<<endl;
   }
   createTree(t);
+  cout<<t->nodes.size()<<endl;
   cout<<"finished creating tree"<<endl;
   printInorder(t->nodes[0]);
   encodeString(t,n);
@@ -158,79 +165,149 @@ HuffTree* huffManCompression(string n){
   return t;
 }
 
-// HuffMan* huffManCompression(string n){
-//   map<char,int> cc;
-//   int sizeCC = 0;
-//   for(int i = 0; i < n.size();i++){
-//     n[i] = tolower(n[i]);
-//     cout<<(n[i])<<endl;
-//     cc[tolower(n[i])] ++;
-//     cout << cc[n[i]] << endl;
-//   }
-//   characterCount* r[cc.size()];
-//   sizeCC = cc.size();
-//   cout<<cc.size()<<endl;
-//   int index = 0;
-//   cout<<"finished mapping"<<endl;
-//   map<char,int>::iterator it;
-//   int id = 0;
-//   vector<char> characters(cc.size());
-//   vector<int> freq(cc.size());
-//   for(int i = 0; i < n.size();i++){
-//     it = cc.find(n[i]);
-//     if (it != cc.end()){
-//       int insertIndex = 0;
-//       for(int j = 0; j< freq.size();j++){
-//         if(freq[j]< cc[n[i]]){
-//           insertIndex = j;
-//           break;
-//         }
-//       }
-//       vector<int>::iterator itI;
-//       vector<char>::iterator itC;
-//       itC = characters.begin() + insertIndex;
-//       characters.insert ( itC , n[i] );
-//       itI = freq.begin()+ insertIndex;
-//       freq.insert ( itI , cc[n[i]] );
-//       cc.erase (it);
-//     }
-//
-//   }
-//   cout<<"assigned into list"<<endl;
-//   //sort(r, r+cc.size(), compare);
-//   cout<<"sorted"<<endl;
-//   for(int i = 0; i < sizeCC; i++){
-//     cout<<characters[i]<<endl;
-//     cout<<freq[i]<<endl;
-//   }
-//
-//   HuffTree* t = initTree();
-//   createTree(t,characters,freq);
-//
-//
-//
-//   return NULL;
-// }
+struct LzNode{
+  int offset;
+  int length;
+  char endChar;
+};
 
+LzNode* newLzNode(int offset, int lengthMatch, char endChar){
+  struct LzNode* temp = (struct LzNode*)malloc(sizeof(struct LzNode));
+  temp->offset = offset;
+  temp->length = lengthMatch;
+  temp->endChar = endChar;
+  return temp;
+}
+
+template<typename T>
+void pop_front(vector<T> &v, int n){
+  for(int i = 0; i < n || i < v.size();i++){
+    if (v.size() > 0) {
+        v.erase(v.begin());
+    }
+  }
+}
+
+//pop up to index n
+void pop_front(string &s,int n){
+  for(int i = 0; i < n;i++) s.erase(s.begin()+i);
+}
+
+vector<LzNode*> lz77(string n,int searchBsize, int lookBsize){
+  vector<char> sb;
+  vector<char> lab;
+  vector<LzNode*> finalNodes;
+  int moveBufferBy = 0;
+  finalNodes.push_back(newLzNode(0,0,n[0]));
+  sb.push_back(n[0]);
+  pop_front(n,0);
+
+
+  while(!n.empty()){
+    char matchingFrom = n[0];
+    vector<int> indexMatchingTo;
+    int offset = 0, length = 0;
+    char endChar = '\0';
+    bool foundMatch = false;
+
+    for(int i = searchBsize-1; i >= 0;i++){
+      if(sb[i] == matchingFrom){
+        foundMatch = true;
+        int tempoffset = i, templength = 1;
+        char tempChar = n[1];
+        for(int j = 1;j<searchBsize+searchBsize-i-1;i++){
+          if(i+j >= searchBsize){
+            if(n[j-(searchBsize-i)] == n[j]){
+              tempoffset = i;
+              templength = j+1;
+              if(j == n.size()-1){
+                tempChar = n[j];
+                break;
+              }else{
+                tempChar = n[j+1];
+              }
+            }else{
+              break;
+            }
+          }
+          if(sb[i+j] == n[j]){
+            tempoffset = i;
+            templength = j+1;
+            if(j == n.size()-1){
+              tempChar = n[j];
+            }else{
+              tempChar = n[j+1];
+            }
+          }else{
+            break;
+          }
+        }
+        if(templength > length){
+          offset = tempoffset;
+          length = templength;
+          endChar = tempChar;
+        }
+      }
+    }
+
+    finalNodes.push_back(newLzNode(offset,length,endChar));
+
+    if(!foundMatch) length = 1;
+    if(sb.size() == searchBsize || sb.size() + length < searchBsize){
+      if(sb.size() + length < searchBsize){
+        pop_front(sb,sb.size() + length - searchBsize);
+      }else{
+        pop_front(sb,length);
+      int sbStart = 0;
+      if(length > searchBsize) sbStart = length-searchBsize;
+      for(int i = sbStart; i < length;i++){
+        sb.push_back(n[i]);
+      }
+    }
+    }else{
+      for(int i = 0; i < length;i++){
+        sb.push_back(n[i]);
+      }
+    }
+
+    pop_front(n,length);
+  }
+  finalNodes.insert(finalNodes.begin(),newLzNode(searchBsize,lookBsize,'$'));
+  cout<<finalNodes.size()<<endl;
+  return finalNodes;
+}
 
 
 int main(){
+
+
+  string total = "", n = "";
+  bool start = false;
+  int searchBsize = 6,lookBsize = 6;
+  cout<<"welcome to the Huffman vs LZ77 compression algorithm comparison."<<endl;
+  //cout<<"Please enter the searchBsize and lookBsize for LZ77 algorithm: ";
+  //cin>>searchBsize;
+  //cin>>lookBsize;
+
   cout << "Enter String for compression test between Huffman and LZ77: ";
-  string n = "";
-  getline(cin,n);
-  cout<<n<<endl;
+  while(getline(cin,n)){
+    total = total + n;
+  }
 
-//  auto start = high_resolution_clock::now();
-  HuffTree* compressedStr = huffManCompression(n);
-//  auto stop = high_resolution_clock::now();
-//  auto duration = duration_cast<microseconds>(stop - start);
-  //cout<<"Huffman Compression took "<<duration<<"μs, and uses "<<bitesUsed<<"bites"<<endl;
+  high_resolution_clock::time_point t1 = high_resolution_clock::now();
+  HuffTree* compressedStr1 = huffManCompression(total);
+  high_resolution_clock::time_point t2 = high_resolution_clock::now();
+  cout<<sizeof(total)<<"  ";
+  cout<<sizeof(compressedStr1)<<endl;
 
-  //start = high_resolution_clock::now();
-  //compressed = LZ77(n);
-//  stop = high_resolution_clock::now();
-//  duration = duration_cast<microseconds>(stop - start);
-  //cout<<"LZ77 Compression took "<<duration<<"μs, and uses "<<bitesUsed<<"bites"<<endl;
+  duration<double> time_span = duration_cast<duration<double>>(t2 - t1);
+  cout<<"Huffman Compression took "<<time_span.count()<<"s"<<endl;
+
+  high_resolution_clock::time_point t3 = high_resolution_clock::now();
+  vector<LzNode*> compressedStr2 = lz77(n,searchBsize,lookBsize);
+  high_resolution_clock::time_point t4 = high_resolution_clock::now();
+  duration<double> time_span2 = duration_cast<duration<double>>(t4 - t3);
+  cout<<"LZ77 Compression took "<<time_span2.count()<<"s"<<endl;
 
   return 0;
 }
