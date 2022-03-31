@@ -11,6 +11,9 @@
 #include <chrono>
 #include <cstring>
 #include <map>
+#include <fstream>
+#include <iostream>
+#include <sstream>
 using namespace std;
 using namespace std::chrono;
 
@@ -165,11 +168,27 @@ HuffTree* huffManCompression(string n){
   return t;
 }
 
+/*************************************************************************************************************************************************************************************************************************************************************************************/
+
 struct LzNode{
   int offset;
   int length;
   char endChar;
+
+  std::string toString() const;
+
 };
+
+ostream& operator << (ostream &os, const LzNode &n) {
+    return (os << n.offset << n.length << n.endChar);
+}
+
+std::string LzNode::toString() const {
+    stringstream ss;
+    ss << (*this);
+    return ss.str();
+}
+
 
 LzNode* newLzNode(int offset, int lengthMatch, char endChar){
   struct LzNode* temp = (struct LzNode*)malloc(sizeof(struct LzNode));
@@ -189,37 +208,48 @@ void pop_front(vector<T> &v, int n){
 }
 
 //pop up to index n
-void pop_front(string &s,int n){
-  for(int i = 0; i < n;i++) s.erase(s.begin()+i);
+string pop_front(string s,int n){
+  if(n == s.size()) return "";
+  return s.substr(n);
 }
 
 vector<LzNode*> lz77(string n,int searchBsize, int lookBsize){
+  cout<<"LZ Start"<<endl;
   vector<char> sb;
   vector<char> lab;
   vector<LzNode*> finalNodes;
   int moveBufferBy = 0;
   finalNodes.push_back(newLzNode(0,0,n[0]));
+  cout<<finalNodes[finalNodes.size()-1]->offset<<"  ";
+  cout<<finalNodes[finalNodes.size()-1]->length<<"  ";
+  cout<<finalNodes[finalNodes.size()-1]->endChar<<endl;
   sb.push_back(n[0]);
-  pop_front(n,0);
+  n = pop_front(n,1);
 
 
-  while(!n.empty()){
+  while(n != ""){
+    //cout<<"while entered                 "<<n<<endl;
     char matchingFrom = n[0];
+    //cout<<matchingFrom<<endl;
     vector<int> indexMatchingTo;
     int offset = 0, length = 0;
-    char endChar = '\0';
+    char endChar = matchingFrom;
     bool foundMatch = false;
-
-    for(int i = searchBsize-1; i >= 0;i++){
+//cabxacadabxaxxaxxad
+    for(int i = sb.size()-1; i >= 0;i--){
+      //cout<<sb[i]<<endl;
       if(sb[i] == matchingFrom){
+        //cout<<"found match      "<< sb[i]<<endl;
         foundMatch = true;
-        int tempoffset = i, templength = 1;
+        int tempoffset = sb.size()-i, templength = 1;
         char tempChar = n[1];
-        for(int j = 1;j<searchBsize+searchBsize-i-1;i++){
-          if(i+j >= searchBsize){
-            if(n[j-(searchBsize-i)] == n[j]){
-              tempoffset = i;
+        for(int j = 1;j<searchBsize+sb.size()-i-1;j++){
+          if(i+j >= sb.size()){
+            if(n[j-(sb.size()-i)] == n[j]){
+              //cout<<"match went into look "<<n.size()<<endl;
+              //cout<<"found match      "<< n[j-(sb.size()-i)]<<" "<<endl;
               templength = j+1;
+              tempoffset = sb.size()-i;
               if(j == n.size()-1){
                 tempChar = n[j];
                 break;
@@ -227,12 +257,14 @@ vector<LzNode*> lz77(string n,int searchBsize, int lookBsize){
                 tempChar = n[j+1];
               }
             }else{
+              //cout<<"no match went into look "<<n.size()<<" "<< n<<endl;
               break;
             }
           }
-          if(sb[i+j] == n[j]){
-            tempoffset = i;
+          else if(sb[i+j] == n[j]){
+            //cout<<"found match "<<sb[i+j]<<endl;
             templength = j+1;
+            tempoffset = sb.size()-i;
             if(j == n.size()-1){
               tempChar = n[j];
             }else{
@@ -247,13 +279,18 @@ vector<LzNode*> lz77(string n,int searchBsize, int lookBsize){
           length = templength;
           endChar = tempChar;
         }
+      }else{
+        //cout<<"no match"<<endl;
       }
     }
 
     finalNodes.push_back(newLzNode(offset,length,endChar));
+    cout<<finalNodes[finalNodes.size()-1]->offset<<"  ";
+    cout<<finalNodes[finalNodes.size()-1]->length<<"  ";
+    cout<<finalNodes[finalNodes.size()-1]->endChar<<endl;
 
-    if(!foundMatch) length = 1;
-    if(sb.size() == searchBsize || sb.size() + length < searchBsize){
+    length++;
+    if(sb.size() == searchBsize || sb.size()-1 + length > searchBsize){
       if(sb.size() + length < searchBsize){
         pop_front(sb,sb.size() + length - searchBsize);
       }else{
@@ -270,7 +307,7 @@ vector<LzNode*> lz77(string n,int searchBsize, int lookBsize){
       }
     }
 
-    pop_front(n,length);
+    n = pop_front(n,length);
   }
   finalNodes.insert(finalNodes.begin(),newLzNode(searchBsize,lookBsize,'$'));
   cout<<finalNodes.size()<<endl;
@@ -278,36 +315,73 @@ vector<LzNode*> lz77(string n,int searchBsize, int lookBsize){
 }
 
 
+
+
+long long int calculatesize(char filename[100]);
 int main(){
 
 
   string total = "", n = "";
   bool start = false;
-  int searchBsize = 6,lookBsize = 6;
+  int searchBsize = 7,lookBsize = 6;
+  ofstream output;
+  char origionalInput[] = "origionalInput.txt";
+  char huffOut[] = "huffOut.txt";
+  char LZ77Out[] = "LZ77Out.txt";
+  output.open(origionalInput);
   cout<<"welcome to the Huffman vs LZ77 compression algorithm comparison."<<endl;
   //cout<<"Please enter the searchBsize and lookBsize for LZ77 algorithm: ";
   //cin>>searchBsize;
   //cin>>lookBsize;
-
+  //cin.ignore();
   cout << "Enter String for compression test between Huffman and LZ77: ";
   while(getline(cin,n)){
     total = total + n;
   }
+  output<< total<<endl;
+  cout << "Origional size of input: "<<calculatesize(origionalInput)<< " bytes"<<endl;
+  output.close();
 
+
+
+  output.open(huffOut);
   high_resolution_clock::time_point t1 = high_resolution_clock::now();
-  HuffTree* compressedStr1 = huffManCompression(total);
+  //HuffTree* compressedStr1 = huffManCompression(total);
   high_resolution_clock::time_point t2 = high_resolution_clock::now();
   cout<<sizeof(total)<<"  ";
-  cout<<sizeof(compressedStr1)<<endl;
-
+  //cout<<sizeof(compressedStr1)<<endl;
   duration<double> time_span = duration_cast<duration<double>>(t2 - t1);
-  cout<<"Huffman Compression took "<<time_span.count()<<"s"<<endl;
+  //output<< compressedStr1<<endl;
+  cout<<"Huffman Compression took "<<time_span.count()<<"s and now takes up "<<calculatesize(huffOut)<< " bytes"<<endl;
+  output.close();
 
+
+
+  output.open(LZ77Out);
   high_resolution_clock::time_point t3 = high_resolution_clock::now();
-  vector<LzNode*> compressedStr2 = lz77(n,searchBsize,lookBsize);
+  vector<LzNode*> compressedStr2 = lz77(total,searchBsize,lookBsize);
   high_resolution_clock::time_point t4 = high_resolution_clock::now();
   duration<double> time_span2 = duration_cast<duration<double>>(t4 - t3);
-  cout<<"LZ77 Compression took "<<time_span2.count()<<"s"<<endl;
-
+  for(int i = 0; i< compressedStr2.size();i++){
+    output<< compressedStr2[i]->toString();
+  }
+  cout<<"LZ77 Compression took "<<time_span2.count()<<"s and now takes up "<<calculatesize(LZ77Out)<< " bytes"<<endl;
+  output.close();
   return 0;
+}
+
+
+
+long long int calculatesize(char filename[100])
+{
+
+    FILE* fp = fopen(filename, "r");
+    if (fp == NULL) {
+        cout<< "file doesnt exist \n";
+        return -1;
+    }
+    fseek(fp, 0L, SEEK_END);
+    long int ans= ftell(fp);
+    fclose(fp);
+    return ans;
 }

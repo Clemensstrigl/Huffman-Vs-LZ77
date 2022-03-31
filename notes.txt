@@ -1,0 +1,36 @@
+Huffman:
+
+runtime:
+O(nlogn)
+
+LZ77:
+
+runtime:
+O(nlogn)
+
+
+
+Speaker 1 Theo: Christophesies Graph algorithm
+set up graph in report, tell him every requirement for the Graph
+Just use a consisten E for the runtime
+
+Speaker 2 Charlei Thao: sudoku algorithm
+Back tracking algorithm, brute force
+
+Speaker 3 Saotatpio: red black trees
+Good history lession on the algorithm
+tree maintains balance based on boolean inside nodes
+well done with the induction proof of the runtime
+mention default color of nodes
+
+Speaker 5: At K-nearest neightbor
+got intuition
+clearify that we are finding the k nearest neightbor for new datapoints
+mention runtime O(nlogn)
+
+Jared:
+Gives two version of the solution recursion(brute force) and dynamic
+mention runtime of the two versions and how it compares
+well done giving the base cases for the intuition
+edge cases?
+What if u were to use a dictionary instead of a matrix for the dynamic approach
