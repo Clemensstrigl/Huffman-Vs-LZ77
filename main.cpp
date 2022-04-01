@@ -23,12 +23,35 @@ struct Node {
     Node* right;
     Node* left;
     bool isLeaf;
+    std::string toString() const;
 };
+
+std::string Node::toString() const {
+    stringstream ss;
+    ss << (*this).freq;
+    if((*this).isLeaf) ss<<"," <<(*this).c;
+    ss<<",";
+    if((*this).left) ss<<(*this).left->toString();
+    if((*this).right) ss<<(*this).left->toString();
+    return ss.str();
+}
 
 struct HuffTree{
   string encoded;
   vector<Node*> nodes;
+  std::string toString() const;
 };
+
+std::string HuffTree::toString() const {
+    stringstream ss;
+    if((*this).nodes.size() == 1){
+      ss << (*this).nodes[0]->toString();
+      ss << (*this).encoded;
+    }else{
+      ss<<"please encode a string"<<endl;
+    }
+    return ss.str();
+}
 
 
 struct Node* newNode(char c, int freq){
@@ -62,7 +85,7 @@ void sortNodes(vector<Node*> &nodes){
   });
 }
 
-struct HuffTree* initTree(vector<Node*> &nodes){
+struct HuffTree* initTree(vector<Node*> nodes){
     struct HuffTree* huffTree = (struct HuffTree*)malloc(sizeof(struct HuffTree));
     cout<<"allocated"<<endl;
     //huffTree->encoded= "";
@@ -73,6 +96,7 @@ struct HuffTree* initTree(vector<Node*> &nodes){
 }
 
 void createTree(HuffTree *t){
+  sortNodes(t->nodes);
   while(t->nodes.size() > 1){
     Node* left = t->nodes[0];
     pop_front(t->nodes);
@@ -81,6 +105,7 @@ void createTree(HuffTree *t){
     t->nodes.push_back(newNode(right, left));
     sortNodes(t->nodes);
   }
+
 }
 
 
@@ -144,15 +169,15 @@ HuffTree* huffManCompression(string n){
   }
   cout<<"assigned into list"<<endl;
   sortNodes(nodes);
-  cout<<"sorted"<<endl;
+  cout<<"       sorted"<<endl;
   cout<<nodes.size()<<endl;
   for(int i = 0; i < nodes.size(); i++){
-    cout<<"       "<<i<<endl;
+    cout<<i<<endl;
     cout<<nodes[i]->c<<endl;
     cout<<nodes[i]->freq<<endl;
   }
-
-  HuffTree* t = initTree(nodes);
+  cout<<"done with print"<<endl;
+  HuffTree* t = initTree(&nodes);
   cout<<"inited tree"<<endl;
   for(int i = 0; i < nodes.size(); i++){
     cout<<t->nodes[i]->c<<endl;
@@ -323,7 +348,7 @@ int main(){
 
   string total = "", n = "";
   bool start = false;
-  int searchBsize = 7,lookBsize = 6;
+  int searchBsize = 90,lookBsize = 80;
   ofstream output;
   char origionalInput[] = "origionalInput.txt";
   char huffOut[] = "huffOut.txt";
@@ -346,14 +371,15 @@ int main(){
 
   output.open(huffOut);
   high_resolution_clock::time_point t1 = high_resolution_clock::now();
-  //HuffTree* compressedStr1 = huffManCompression(total);
+  HuffTree* compressedStr1 = huffManCompression(total);
   high_resolution_clock::time_point t2 = high_resolution_clock::now();
   cout<<sizeof(total)<<"  ";
   //cout<<sizeof(compressedStr1)<<endl;
   duration<double> time_span = duration_cast<duration<double>>(t2 - t1);
-  //output<< compressedStr1<<endl;
-  cout<<"Huffman Compression took "<<time_span.count()<<"s and now takes up "<<calculatesize(huffOut)<< " bytes"<<endl;
+  output<< compressedStr1->toString()<<endl;
   output.close();
+  cout<<"Huffman Compression took "<<time_span.count()<<"s and now takes up "<<calculatesize(huffOut)<< " bytes"<<endl;
+
 
 
 
@@ -365,8 +391,9 @@ int main(){
   for(int i = 0; i< compressedStr2.size();i++){
     output<< compressedStr2[i]->toString();
   }
-  cout<<"LZ77 Compression took "<<time_span2.count()<<"s and now takes up "<<calculatesize(LZ77Out)<< " bytes"<<endl;
   output.close();
+  cout<<"LZ77 Compression took "<<time_span2.count()<<"s and now takes up "<<calculatesize(LZ77Out)<< " bytes"<<endl;
+
   return 0;
 }
 
