@@ -85,12 +85,14 @@ void sortNodes(vector<Node*> &nodes){
   });
 }
 
-struct HuffTree* initTree(vector<Node*> nodes){
+struct HuffTree* initTree(vector<Node*> &nodes){
     struct HuffTree* huffTree = (struct HuffTree*)malloc(sizeof(struct HuffTree));
     cout<<"allocated"<<endl;
     //huffTree->encoded= "";
     huffTree->nodes = nodes;
     cout<<"allocated"<<endl;
+    cout<<nodes.size()<<endl;
+    cout<<huffTree->nodes.size()<<endl;
 
     return huffTree;
 }
@@ -177,7 +179,7 @@ HuffTree* huffManCompression(string n){
     cout<<nodes[i]->freq<<endl;
   }
   cout<<"done with print"<<endl;
-  HuffTree* t = initTree(&nodes);
+  HuffTree* t = initTree(nodes);
   cout<<"inited tree"<<endl;
   for(int i = 0; i < nodes.size(); i++){
     cout<<t->nodes[i]->c<<endl;
@@ -234,7 +236,7 @@ void pop_front(vector<T> &v, int n){
 
 //pop up to index n
 string pop_front(string s,int n){
-  if(n == s.size()) return "";
+  if(n >= s.size()) return "";
   return s.substr(n);
 }
 
@@ -310,9 +312,9 @@ vector<LzNode*> lz77(string n,int searchBsize, int lookBsize){
     }
 
     finalNodes.push_back(newLzNode(offset,length,endChar));
-    cout<<finalNodes[finalNodes.size()-1]->offset<<"  ";
-    cout<<finalNodes[finalNodes.size()-1]->length<<"  ";
-    cout<<finalNodes[finalNodes.size()-1]->endChar<<endl;
+  //  cout<<finalNodes[finalNodes.size()-1]->offset<<"  ";
+  //  cout<<finalNodes[finalNodes.size()-1]->length<<"  ";
+  //  cout<<finalNodes[finalNodes.size()-1]->endChar<<endl;
 
     length++;
     if(sb.size() == searchBsize || sb.size()-1 + length > searchBsize){
@@ -331,8 +333,10 @@ vector<LzNode*> lz77(string n,int searchBsize, int lookBsize){
         sb.push_back(n[i]);
       }
     }
-
+    //cout<<"popping front of string"<<endl;
     n = pop_front(n,length);
+    //cout<<"finished popping front of string"<<endl;
+
   }
   finalNodes.insert(finalNodes.begin(),newLzNode(searchBsize,lookBsize,'$'));
   cout<<finalNodes.size()<<endl;
@@ -348,7 +352,7 @@ int main(){
 
   string total = "", n = "";
   bool start = false;
-  int searchBsize = 90,lookBsize = 80;
+  int searchBsize = 2000,lookBsize = 2000;
   ofstream output;
   char origionalInput[] = "origionalInput.txt";
   char huffOut[] = "huffOut.txt";
@@ -371,12 +375,12 @@ int main(){
 
   output.open(huffOut);
   high_resolution_clock::time_point t1 = high_resolution_clock::now();
-  HuffTree* compressedStr1 = huffManCompression(total);
+  //HuffTree* compressedStr1 = huffManCompression(total);
   high_resolution_clock::time_point t2 = high_resolution_clock::now();
   cout<<sizeof(total)<<"  ";
   //cout<<sizeof(compressedStr1)<<endl;
   duration<double> time_span = duration_cast<duration<double>>(t2 - t1);
-  output<< compressedStr1->toString()<<endl;
+  //output<< compressedStr1->toString()<<endl;
   output.close();
   cout<<"Huffman Compression took "<<time_span.count()<<"s and now takes up "<<calculatesize(huffOut)<< " bytes"<<endl;
 
