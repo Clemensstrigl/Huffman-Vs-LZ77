@@ -29,27 +29,24 @@ struct Node {
 std::string Node::toString() const {
     stringstream ss;
     ss << (*this).freq;
-    if((*this).isLeaf) ss<<"," <<(*this).c;
-    ss<<",";
+    if((*this).c != '\0') ss<<"," <<(*this).c;
+    ss<<"\n";
     if((*this).left) ss<<(*this).left->toString();
-    if((*this).right) ss<<(*this).left->toString();
+    if((*this).right) ss<<(*this).right->toString();
     return ss.str();
 }
 
 struct HuffTree{
   string encoded;
-  vector<Node*> nodes;
+  string treeToString;
+  Node* root;
   std::string toString() const;
 };
 
 std::string HuffTree::toString() const {
     stringstream ss;
-    if((*this).nodes.size() == 1){
-      ss << (*this).nodes[0]->toString();
-      ss << (*this).encoded;
-    }else{
-      ss<<"please encode a string"<<endl;
-    }
+    ss << (*this).treeToString;
+    ss << (*this).encoded;
     return ss.str();
 }
 
@@ -69,6 +66,7 @@ struct Node* newNode(Node* right, Node* left){
     temp->right = right;
     temp->freq = right->freq + left->freq;
     temp->isLeaf = false;
+    temp->c = '\0';
     return temp;
 }
 
@@ -85,70 +83,73 @@ void sortNodes(vector<Node*> &nodes){
   });
 }
 
+Node* createTree(vector<Node*> &nodes){
+  sortNodes(nodes);
+  while(nodes.size() > 1){
+    Node* left = nodes[0];
+    pop_front(nodes);
+    Node* right = nodes[0];
+    pop_front(nodes);
+    nodes.push_back(newNode(right, left));
+    sortNodes(nodes);
+  }
+  return nodes[0];
+
+}
+
 struct HuffTree* initTree(vector<Node*> &nodes){
     struct HuffTree* huffTree = (struct HuffTree*)malloc(sizeof(struct HuffTree));
     cout<<"allocated"<<endl;
     //huffTree->encoded= "";
-    huffTree->nodes = nodes;
+    huffTree->root = createTree(nodes);
     cout<<"allocated"<<endl;
-    cout<<nodes.size()<<endl;
-    cout<<huffTree->nodes.size()<<endl;
 
     return huffTree;
 }
 
-void createTree(HuffTree *t){
-  sortNodes(t->nodes);
-  while(t->nodes.size() > 1){
-    Node* left = t->nodes[0];
-    pop_front(t->nodes);
-    Node* right = t->nodes[0];
-    pop_front(t->nodes);
-    t->nodes.push_back(newNode(right, left));
-    sortNodes(t->nodes);
-  }
-
-}
 
 
 
 void printInorder(struct Node* node)
 {
-    if (node == NULL)
-        return;
-
+  if (node->isLeaf){
+      cout<<node->c<<" is a leaf"<<endl;
+      return;
+  }
     /* first recur on left child */
+    cout << node->freq << " "<<endl;
     printInorder(node->left);
 
     /* then print the data of node */
-    cout << node->freq << " ";
+
 
     /* now recur on right child */
     printInorder(node->right);
 }
 
-void getCharBits(struct Node* node, string code, map<char,string> &m){
+void getCharBits(struct Node* node, string &code, map<char,string> &m){
     if (node->isLeaf){
         m[node->c] = code;
+        cout<<node->c<<" is a leaf with code "<<code<<endl;
         return;
     }
     code = code + "0";
 
-    getCharBits(node->left, code,m);
+    if(node->left)getCharBits(node->left, code,m);
     code.erase(code.end()-1);
-      code = code + "1";
+    code = code + "1";
     /* now recur on right subtree */
-    getCharBits(node->right, code, m);
+    if(node->right)getCharBits(node->right, code, m);
 }
-void encodeString(HuffTree*t, string n){
+string encodeString(HuffTree* t, string n){
   map<char,string> m;
   string code = "";
-  getCharBits(t->nodes[0],code,m);
+  getCharBits(t->root,code,m);
   string final = "";
   for(int i = 0; i < n.size(); i++){
     final+= m[n[i]];
   }
-  t->encoded = final;
+  return final;
 }
 
 HuffTree* huffManCompression(string n){
@@ -174,22 +175,18 @@ HuffTree* huffManCompression(string n){
   cout<<"       sorted"<<endl;
   cout<<nodes.size()<<endl;
   for(int i = 0; i < nodes.size(); i++){
-    cout<<i<<endl;
+
     cout<<nodes[i]->c<<endl;
     cout<<nodes[i]->freq<<endl;
   }
   cout<<"done with print"<<endl;
   HuffTree* t = initTree(nodes);
   cout<<"inited tree"<<endl;
-  for(int i = 0; i < nodes.size(); i++){
-    cout<<t->nodes[i]->c<<endl;
-    cout<<t->nodes[i]->freq<<endl;
-  }
-  createTree(t);
-  cout<<t->nodes.size()<<endl;
   cout<<"finished creating tree"<<endl;
-  printInorder(t->nodes[0]);
-  encodeString(t,n);
+  printInorder(t->root);
+  t->treeToString = t->root->toString();
+  t->encoded = encodeString(t,n);
+  printInorder(t->root);
   cout<<"finished encoding"<<endl;
   cout<<t->encoded<<endl;
   return t;
@@ -375,12 +372,10 @@ int main(){
 
   output.open(huffOut);
   high_resolution_clock::time_point t1 = high_resolution_clock::now();
-  //HuffTree* compressedStr1 = huffManCompression(total);
+  HuffTree* compressedStr1 = huffManCompression(total);
   high_resolution_clock::time_point t2 = high_resolution_clock::now();
-  cout<<sizeof(total)<<"  ";
-  //cout<<sizeof(compressedStr1)<<endl;
   duration<double> time_span = duration_cast<duration<double>>(t2 - t1);
-  //output<< compressedStr1->toString()<<endl;
+  output<< compressedStr1->toString()<<endl;
   output.close();
   cout<<"Huffman Compression took "<<time_span.count()<<"s and now takes up "<<calculatesize(huffOut)<< " bytes"<<endl;
 
