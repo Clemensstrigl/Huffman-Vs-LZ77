@@ -30,7 +30,7 @@ std::string Node::toString() const {
     stringstream ss;
     ss << (*this).freq;
     if((*this).c != '\0') ss<<"," <<(*this).c;
-    ss<<"\n";
+    ss<<",";
     if((*this).left) ss<<(*this).left->toString();
     if((*this).right) ss<<(*this).right->toString();
     return ss.str();
@@ -99,10 +99,10 @@ Node* createTree(vector<Node*> &nodes){
 
 struct HuffTree* initTree(vector<Node*> &nodes){
     struct HuffTree* huffTree = (struct HuffTree*)malloc(sizeof(struct HuffTree));
-    cout<<"allocated"<<endl;
+    //cout<<"allocated"<<endl;
     //huffTree->encoded= "";
     huffTree->root = createTree(nodes);
-    cout<<"allocated"<<endl;
+    //cout<<"allocated"<<endl;
 
     return huffTree;
 }
@@ -113,11 +113,11 @@ struct HuffTree* initTree(vector<Node*> &nodes){
 void printInorder(struct Node* node)
 {
   if (node->isLeaf){
-      cout<<node->c<<" is a leaf"<<endl;
+      //cout<<node->c<<" is a leaf"<<endl;
       return;
   }
     /* first recur on left child */
-    cout << node->freq << " "<<endl;
+    //cout << node->freq << " "<<endl;
     printInorder(node->left);
 
     /* then print the data of node */
@@ -130,7 +130,7 @@ void printInorder(struct Node* node)
 void getCharBits(struct Node* node, string &code, map<char,string> &m){
     if (node->isLeaf){
         m[node->c] = code;
-        cout<<node->c<<" is a leaf with code "<<code<<endl;
+        //cout<<node->c<<" is a leaf with code "<<code<<endl;
         return;
     }
     code = code + "0";
@@ -157,9 +157,9 @@ HuffTree* huffManCompression(string n){
   int sizeCC = 0;
   for(int i = 0; i < n.size();i++){
     n[i] = tolower(n[i]);
-    cout<<(n[i])<<endl;
+    //cout<<(n[i])<<endl;
     cc[tolower(n[i])] ++;
-    cout << cc[n[i]] << endl;
+    //cout << cc[n[i]] << endl;
   }
   map<char,int>::iterator it;
   vector<Node*> nodes;
@@ -170,25 +170,25 @@ HuffTree* huffManCompression(string n){
       cc.erase (it);
     }
   }
-  cout<<"assigned into list"<<endl;
+  //cout<<"assigned into list"<<endl;
   sortNodes(nodes);
-  cout<<"       sorted"<<endl;
-  cout<<nodes.size()<<endl;
-  for(int i = 0; i < nodes.size(); i++){
-
-    cout<<nodes[i]->c<<endl;
-    cout<<nodes[i]->freq<<endl;
-  }
-  cout<<"done with print"<<endl;
+  //cout<<"       sorted"<<endl;
+  //cout<<nodes.size()<<endl;
+  // for(int i = 0; i < nodes.size(); i++){
+  //
+  //   cout<<nodes[i]->c<<endl;
+  //   cout<<nodes[i]->freq<<endl;
+  // }
+  //cout<<"done with print"<<endl;
   HuffTree* t = initTree(nodes);
-  cout<<"inited tree"<<endl;
-  cout<<"finished creating tree"<<endl;
-  printInorder(t->root);
+  //cout<<"inited tree"<<endl;
+  //cout<<"finished creating tree"<<endl;
+  //printInorder(t->root);
   t->treeToString = t->root->toString();
   t->encoded = encodeString(t,n);
-  printInorder(t->root);
-  cout<<"finished encoding"<<endl;
-  cout<<t->encoded<<endl;
+  //printInorder(t->root);
+  //cout<<"finished encoding"<<endl;
+  //cout<<t->encoded<<endl;
   return t;
 }
 
@@ -238,15 +238,15 @@ string pop_front(string s,int n){
 }
 
 vector<LzNode*> lz77(string n,int searchBsize, int lookBsize){
-  cout<<"LZ Start"<<endl;
+  //cout<<"LZ Start"<<endl;
   vector<char> sb;
   vector<char> lab;
   vector<LzNode*> finalNodes;
   int moveBufferBy = 0;
   finalNodes.push_back(newLzNode(0,0,n[0]));
-  cout<<finalNodes[finalNodes.size()-1]->offset<<"  ";
-  cout<<finalNodes[finalNodes.size()-1]->length<<"  ";
-  cout<<finalNodes[finalNodes.size()-1]->endChar<<endl;
+  //cout<<finalNodes[finalNodes.size()-1]->offset<<"  ";
+  //cout<<finalNodes[finalNodes.size()-1]->length<<"  ";
+  //cout<<finalNodes[finalNodes.size()-1]->endChar<<endl;
   sb.push_back(n[0]);
   n = pop_front(n,1);
 
@@ -259,7 +259,6 @@ vector<LzNode*> lz77(string n,int searchBsize, int lookBsize){
     int offset = 0, length = 0;
     char endChar = matchingFrom;
     bool foundMatch = false;
-//cabxacadabxaxxaxxad
     for(int i = sb.size()-1; i >= 0;i--){
       //cout<<sb[i]<<endl;
       if(sb[i] == matchingFrom){
@@ -336,7 +335,7 @@ vector<LzNode*> lz77(string n,int searchBsize, int lookBsize){
 
   }
   finalNodes.insert(finalNodes.begin(),newLzNode(searchBsize,lookBsize,'$'));
-  cout<<finalNodes.size()<<endl;
+  //cout<<finalNodes.size()<<endl;
   return finalNodes;
 }
 
@@ -348,7 +347,7 @@ int main(){
 
 
   string total = "", n = "";
-  bool start = false;
+  bool LZ77Config = true;
   int searchBsize = 2000,lookBsize = 2000;
   ofstream output;
   char origionalInput[] = "origionalInput.txt";
@@ -356,15 +355,18 @@ int main(){
   char LZ77Out[] = "LZ77Out.txt";
   output.open(origionalInput);
   cout<<"welcome to the Huffman vs LZ77 compression algorithm comparison."<<endl;
-  //cout<<"Please enter the searchBsize and lookBsize for LZ77 algorithm: ";
-  //cin>>searchBsize;
-  //cin>>lookBsize;
-  //cin.ignore();
-  cout << "Enter String for compression test between Huffman and LZ77: ";
+  if(LZ77Config){
+    cout<<"Please enter the searchBsize and lookBsize for LZ77 algorithm: ";
+    cin>>searchBsize;
+    cin>>lookBsize;
+    cin.ignore();
+    cout<<searchBsize<<" "<<lookBsize<<endl;
+  }
+  cout << "Enter String for compression test between Huffman and LZ77: "<<endl;
   while(getline(cin,n)){
     total = total + n;
   }
-  output<< total<<endl;
+  output<<total;
   cout << "Origional size of input: "<<calculatesize(origionalInput)<< " bytes"<<endl;
   output.close();
 
